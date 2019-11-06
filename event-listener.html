@@ -1,0 +1,229 @@
+<html lang="en">
+<head>
+    <title>Event Listener Example</title>
+    <meta charset="utf-8"/>
+    <style>
+        body {
+            border: 1px solid black;
+            width: 800px;
+            background-color: #333;
+            color: white;
+        }
+        button {
+            width: 50px;
+            background-color: #CCC;
+            border: solid;
+            color: black;
+            padding: 5px 5px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        div {
+            margin: 10px;
+        }
+        ul {
+            padding: 10px;
+            border: 1px solid black;
+            list-style-type: none;
+            transform: rotate(180deg);
+        }
+        ul > li {
+            transform: rotate(-180deg);
+        }
+    </style>
+
+    <script>
+        document.log = function(value1, value2 = "") {
+            let log = document.getElementById("log");
+            let li = document.createElement("li");
+            let text = document.createTextNode(value1 + " " + value2);
+            li.style.backgroundColor = "black";
+            li.style.transition = "3s";
+            li.appendChild(text);
+            log.appendChild(li);
+            requestAnimationFrame(() =>
+                setTimeout(() => {
+                    li.style.backgroundColor = "#333";
+                })
+            );
+        };
+
+        document.warn = function(value) {
+            let log = document.getElementById("log");
+            let li = document.createElement("li");
+            let text = document.createTextNode(value);
+            li.style.color = "orange";
+            li.style.backgroundColor = "black";
+            li.style.transition = "3s";
+            li.appendChild(text);
+            log.appendChild(li);
+            requestAnimationFrame(() =>
+                setTimeout(() => {
+                    li.style.backgroundColor = "#333";
+                })
+            );
+        };
+
+        class GPS {
+            constructor(distanceElement, start = false) {
+                this.distanceElement = distanceElement;
+                this.eventTarget = new EventTarget();
+                this.distance = 0;
+
+                this.eventNear = new Event("near");
+                this.eventLoopOn = new Event("on");
+                this.eventLoopOff = new Event("off");
+
+                this.on = start;
+                if (start) {
+                    this.start();
+                }
+            }
+
+            loop() {
+                setTimeout(() => {
+                    if (this.on) {
+                        // calculate position
+                        this.distance++;
+                        this.distanceElement.innerText = this.distance;
+                        // check if close enough
+                        if (this.distance % 5 === 0) {
+                            this.dispatchEvent(this.eventNear);
+                        }
+                        this.loop()
+                    }
+                }, 1000);
+            }
+
+            addEventListener(type, listener, useCapture) {
+                this.eventTarget.addEventListener(type, listener, useCapture);
+                document.log("event set:", type);
+            }
+
+            removeEventListener(type, listener) {
+                this.eventTarget.removeEventListener(type, listener);
+                document.log("event removed:", type);
+            }
+
+            dispatchEvent(e) {
+                this.eventTarget.dispatchEvent(e);
+                document.log("event dispatched, type:", e.type);
+            }
+
+            start() {
+                this.dispatchEvent(this.eventLoopOn);
+                this.on = true;
+                this.loop();
+            }
+
+            stop() {
+                this.dispatchEvent(this.eventLoopOff);
+                this.on = false;
+            }
+        }
+    </script>
+</head>
+<body>
+<div>
+    <button id="listener-notice-add"    style="display: inline; color: darkred">off</button>
+    <button id="listener-notice-remove" style="display: none; color: green">on</button>
+    notice
+</div>
+<div>
+    <button id="listener-open-add"    style="display: inline; color: darkred">off</button>
+    <button id="listener-open-remove" style="display: none; color: green">on</button>
+    open
+</div>
+<div>
+    <button id="loop-on"  style="display: none; color: darkred">off</button>
+    <button id="loop-off" style="display: inline; color: green">on</button>
+    loop
+</div>
+<div>
+    <button id="distance">0</button>
+    <ul id="log"></ul>
+</div>
+
+<script>
+    (function() {
+        let button = {
+                noticeAdd:    document.getElementById("listener-notice-add"),
+                noticeRemove: document.getElementById("listener-notice-remove"),
+                openAdd:      document.getElementById("listener-open-add"),
+                openRemove:   document.getElementById("listener-open-remove"),
+                loopOn:       document.getElementById("loop-on"),
+                loopOff:      document.getElementById("loop-off"),
+                distance:     document.getElementById("distance"),
+            },
+            gps = new GPS(button.distance, true);
+
+        /* ******************
+        * event "GPS LOOP"
+        ********************/
+        gps.addEventListener('on', () => {
+            button.loopOn.style.display = "none";
+            button.loopOff.style.display = "inline";
+        }, false);
+
+        gps.addEventListener('off', () => {
+            button.loopOn.style.display = "inline";
+            button.loopOff.style.display = "none";
+        }, false);
+
+        /* ******************
+        * event "NOTICE"
+        ********************/
+        let gateHandlerNotice = function (e) {
+            document.warn("you are close to gate");
+        };
+
+        button.noticeAdd.addEventListener("click", () => {
+            gps.addEventListener("near", gateHandlerNotice, false);
+            button.noticeAdd.style.display = "none";
+            button.noticeRemove.style.display = "inline";
+        });
+        button.noticeRemove.addEventListener("click", () => {
+            gps.removeEventListener("near", gateHandlerNotice, false);
+            button.noticeAdd.style.display = "inline";
+            button.noticeRemove.style.display = "none";
+        });
+
+        /* ******************
+        * event "OPEN"
+        ********************/
+        let gateHandlerOpen = function (e) {
+            document.warn("i'm opening the gate");
+        };
+
+        button.openAdd.addEventListener("click", () => {
+            gps.addEventListener("near", gateHandlerOpen, false);
+            button.openAdd.style.display = "none";
+            button.openRemove.style.display = "inline";
+        });
+        button.openRemove.addEventListener("click", () => {
+            gps.removeEventListener("near", gateHandlerOpen, false);
+            button.openAdd.style.display = "inline";
+            button.openRemove.style.display = "none";
+        });
+
+        /* ******************
+        * loop
+        ********************/
+        button.loopOn.addEventListener("click", () => {
+            gps.start()
+        });
+        button.loopOff.addEventListener("click", () => {
+            gps.stop();
+        });
+
+        button.distance.addEventListener("dblclick", () => {
+            document.getElementById('log').innerText = ''
+        });
+    })();
+</script>
+
+</body>
+</html>
