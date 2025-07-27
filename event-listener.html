@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <title>Event Listener Example</title>
@@ -28,14 +29,15 @@
             padding: 10px;
             border: 1px solid black;
             list-style-type: none;
-            transform: rotate(180deg);
+            transform: rotate(180deg); /* powoduje, że nowe logi są na górze */
         }
         ul > li {
-            transform: rotate(-180deg);
+            transform: rotate(-180deg); /* obraca wpisy spowrotem, by były czytelne */
         }
     </style>
 
     <script>
+        // Funkcja logująca zwykłe komunikaty do listy logu
         document.log = function(value1, value2 = "") {
             let log = document.getElementById("log");
             let li = document.createElement("li");
@@ -44,6 +46,7 @@
             li.style.transition = "3s";
             li.appendChild(text);
             log.appendChild(li);
+            // Animacja zmiany koloru tła
             requestAnimationFrame(() =>
                 setTimeout(() => {
                     li.style.backgroundColor = "#333";
@@ -51,6 +54,7 @@
             );
         };
 
+        // Funkcja logująca ostrzeżenia (pomarańczowy tekst)
         document.warn = function(value) {
             let log = document.getElementById("log");
             let li = document.createElement("li");
@@ -67,12 +71,14 @@
             );
         };
 
+        // Klasa symulująca działanie GPS i mechanizm zdarzeń
         class GPS {
             constructor(distanceElement, start = false) {
                 this.distanceElement = distanceElement;
-                this.eventTarget = new EventTarget();
+                this.eventTarget = new EventTarget(); // mechanizm eventowy
                 this.distance = 0;
 
+                // Predefiniowane zdarzenia
                 this.eventNear = new Event("near");
                 this.eventLoopOn = new Event("on");
                 this.eventLoopOff = new Event("off");
@@ -83,17 +89,19 @@
                 }
             }
 
+            // Funkcja pętli czasowej GPS (symuluje ruch)
             loop() {
                 setTimeout(() => {
                     if (this.on) {
-                        // calculate position
+                        // obliczenie pozycji
                         this.distance++;
                         this.distanceElement.innerText = this.distance;
-                        // check if close enough
+
+                        // Co 5 jednostek odległości generujemy zdarzenie "near"
                         if (this.distance % 5 === 0) {
                             this.dispatchEvent(this.eventNear);
                         }
-                        this.loop()
+                        this.loop(); // kontynuuj pętlę
                     }
                 }, 1000);
             }
@@ -127,6 +135,7 @@
     </script>
 </head>
 <body>
+<!-- Sekcja interfejsu z przyciskami do obsługi zdarzeń -->
 <div>
     <button id="listener-notice-add"    style="display: inline; color: darkred">off</button>
     <button id="listener-notice-remove" style="display: none; color: green">on</button>
@@ -149,6 +158,7 @@
 
 <script>
     (function() {
+        // Mapowanie przycisków z DOM
         let button = {
                 noticeAdd:    document.getElementById("listener-notice-add"),
                 noticeRemove: document.getElementById("listener-notice-remove"),
@@ -158,16 +168,19 @@
                 loopOff:      document.getElementById("loop-off"),
                 distance:     document.getElementById("distance"),
             },
-            gps = new GPS(button.distance, true);
+            gps = new GPS(button.distance, true); // uruchomienie symulacji od razu
 
         /* ******************
         * event "GPS LOOP"
         ********************/
+
+        // Reakcje na zdarzenie "on" (start pętli)
         gps.addEventListener('on', () => {
             button.loopOn.style.display = "none";
             button.loopOff.style.display = "inline";
         }, false);
 
+        // Reakcje na zdarzenie "off" (zatrzymanie pętli)
         gps.addEventListener('off', () => {
             button.loopOn.style.display = "inline";
             button.loopOff.style.display = "none";
@@ -176,15 +189,19 @@
         /* ******************
         * event "NOTICE"
         ********************/
+
+        // Funkcja do obsługi zdarzenia "near" - komunikat ostrzegawczy
         let gateHandlerNotice = function (e) {
             document.warn("you are close to gate");
         };
 
+        // Dodanie nasłuchiwacza na "near"
         button.noticeAdd.addEventListener("click", () => {
             gps.addEventListener("near", gateHandlerNotice, false);
             button.noticeAdd.style.display = "none";
             button.noticeRemove.style.display = "inline";
         });
+        // Usunięcie nasłuchiwacza
         button.noticeRemove.addEventListener("click", () => {
             gps.removeEventListener("near", gateHandlerNotice, false);
             button.noticeAdd.style.display = "inline";
@@ -194,6 +211,8 @@
         /* ******************
         * event "OPEN"
         ********************/
+
+        // Drugi handler na to samo zdarzenie "near" - np. otwarcie bramy
         let gateHandlerOpen = function (e) {
             document.warn("i'm opening the gate");
         };
@@ -212,15 +231,18 @@
         /* ******************
         * loop
         ********************/
+
+        // Obsługa przycisków start/stop symulacji GPS
         button.loopOn.addEventListener("click", () => {
-            gps.start()
+            gps.start();
         });
         button.loopOff.addEventListener("click", () => {
             gps.stop();
         });
 
+        // Czyszczenie loga po podwójnym kliknięciu
         button.distance.addEventListener("dblclick", () => {
-            document.getElementById('log').innerText = ''
+            document.getElementById('log').innerText = '';
         });
     })();
 </script>
